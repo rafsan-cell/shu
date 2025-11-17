@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎂 Secret Birthday Gift</title>
+  <style>
+    :root{--accent:#d6336c}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:linear-gradient(135deg,#ffdde1,#ee9ca7);height:100vh;display:flex;align-items:center;justify-content:center}
+    .container{width:100%;max-width:900px;padding:24px}
+    .card{background:rgba(255,255,255,0.92);border-radius:16px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,0.16);min-height:360px;position:relative;overflow:hidden}
+    h1{color:var(--accent);margin:0 0 8px;font-size:28px}
+    p{margin:0 0 18px;font-size:16px}
+    .gift-btn{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none}
+
+    /* PIN overlay */
+    .pin-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,255,255,0.88));display:flex;align-items:center;justify-content:center;padding:20px}
+    .pin-box{width:100%;max-width:420px;background:#fff;border-radius:12px;padding:22px;box-shadow:0 8px 20px rgba(0,0,0,0.12);text-align:center}
+    .pin-box h2{margin:0 0 8px;color:#333}
+    .pin-input{width:100%;padding:12px;border-radius:10px;border:1px solid #eee;font-size:18px;margin-top:12px}
+    .pin-actions{margin-top:14px;display:flex;gap:10px;justify-content:center}
+    .btn{padding:10px 14px;border-radius:9px;border:0;font-weight:600;cursor:pointer}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:#f4f4f4}
+    .error{color:#c0274a;margin-top:10px;min-height:20px}
+
+    /* small helpers */
+    .hidden{display:none}
+
+    @media (max-width:520px){.card{padding:18px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" id="card">
+      <h1>🎉 Happy Birthday!</h1>
+      <p>Behind this door is your special digital gift. Enter the secret PIN to open it.</p>
+
+      <!-- interior content (hidden until PIN correct) -->
+      <div id="interior" class="hidden">
+        <h2>💝 Your Digital Gift</h2>
+        <p>Surprise! This space can contain a personalised message, photo, music, or even a small message board for friends.</p>
+        <a class="gift-btn" href="#">Open Gift</a>
+      </div>
+
+      <!-- PIN overlay shown on top until unlocked -->
+      <div class="pin-overlay" id="pinOverlay" aria-hidden="false">
+        <div class="pin-box">
+          <h2>Enter PIN to proceed</h2>
+          <p>Type the 4-digit secret PIN and press Unlock.</p>
+          <input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN" />
+          <div class="pin-actions">
+            <button id="unlockBtn" class="btn btn-primary">Unlock</button>
+            <button id="cancelBtn" class="btn btn-ghost">Cancel</button>
+          </div>
+          <div id="error" class="error" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ===== CONFIG =====
+    // Default PIN: change this to whatever PIN you want (string). Keep quotes.
+    const SECRET_PIN = '1234';
+    // Maximum wrong attempts before brief lockout
+    const MAX_ATTEMPTS = 5;
+    // Lockout time in seconds after MAX_ATTEMPTS wrong tries
+    const LOCKOUT_SECONDS = 20;
+    // ==================
+
+    const pinOverlay = document.getElementById('pinOverlay');
+    const pinInput = document.getElementById('pinInput');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const errorEl = document.getElementById('error');
+    const interior = document.getElementById('interior');
+
+    // remember unlocked during this browser session
+    const UNLOCKED_KEY = 'birthday_unlocked_v1';
+    const ATTEMPTS_KEY = 'birthday_attempts_v1';
+    const LOCKED_UNTIL_KEY = 'birthday_locked_until_v1';
+
+    function nowSec(){return Math.floor(Date.now()/1000)}
+
+    function setError(msg){ errorEl.textContent = msg || '' }
+
+    function showInterior(){
+      pinOverlay.setAttribute('aria-hidden','true');
+      pinOverlay.classList.add('hidden');
+      interior.classList.remove('hidden');
+    }
+
+    function lockoutRemaining(){
+      const until = Number(localStorage.getItem(LOCKED_UNTIL_KEY) || 0);
+      return Math.max(0, until - nowSec());
+    }
+
+    function checkUnlockedOnLoad(){
+      const unlocked = sessionStorage.getItem(UNLOCKED_KEY);
+      if(unlocked === '1') return showInterior();
+
+      const remaining = lockoutRemaining();
+      if(remaining>0){
+        setError('Too many attempts. Try again in ' + remaining + 's.');
+        unlockBtn.disabled = true;
+        pinInput.disabled = true;
+        setTimeout(()=>location.reload(), (remaining+1)*1000);
+      }
+    }
+
+    unlockBtn.addEventListener('click', ()=>{
+      const entered = (pinInput.value || '').trim();
+      if(!entered){ setError('Please enter the PIN.'); return }
+
+      const remaining = lockoutRemaining();
+      if(remaining>0){ setError('Locked. Try again in ' + remaining + 's.'); return }
+
+      if(entered === SECRET_PIN){
+        // success
+        sessionStorage.setItem(UNLOCKED_KEY, '1');
+        localStorage.removeItem(ATTEMPTS_KEY);
+        localStorage.removeItem(LOCKED_UNTIL_KEY);
+        setError('');
+        showInterior();
+      } else {
+        // wrong PIN
+        const attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
+        localStorage.setItem(ATTEMPTS_KEY, attempts);
+        if(attempts >= MAX_ATTEMPTS){
+          const until = nowSec() + LOCKOUT_SECONDS;
+          localStorage.setItem(LOCKED_UNTIL_KEY, String(until));
+          setError('Too many wrong attempts. Locked for ' + LOCKOUT_SECONDS + 's.');
+          unlockBtn.disabled = true;
+          pinInput.disabled = true;
+          setTimeout(()=>location.reload(), (LOCKOUT_SECONDS+1)*1000);
+        } else {
+          const left = MAX_ATTEMPTS - attempts;
+          setError('Wrong PIN. ' + left + ' attempt(s) left.');
+          pinInput.value = '';
+          pinInput.focus();
+        }
+      }
+    });
+
+    cancelBtn.addEventListener('click', ()=>{
+      pinInput.value = '';
+      setError('');
+    });
+
+    // allow Enter key
+    pinInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') unlockBtn.click() });
+
+    // initialize
+    checkUnlockedOnLoad();
+    pinInput.focus();
+  </script>
+</body>
+</html>
