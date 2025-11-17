@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Birthday XYZ!</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="confettiCanvas"></canvas>
+<div class="container">
+<div class="card" id="card">
+<h1>🎉 Happy Birthday XYZ! 🎉</h1>
+<p>Behind this door is your special digital gift. Enter the secret PIN to open it.</p>
+<div id="interior" class="hidden">
+<h2>💝 Your Digital Gift</h2>
+<p>Surprise XYZ! Enjoy these memories and messages from friends. 💌</p>
+<div class="gallery" id="gallery">
+<img src="images/pic1.jpg" alt="Birthday Photo 1">
+<img src="images/pic2.jpg" alt="Birthday Photo 2">
+<img src="images/pic3.jpg" alt="Birthday Photo 3">
+<img src="images/pic4.jpg" alt="Birthday Photo 4">
+<img src="images/pic5.jpg" alt="Birthday Photo 5">
+<img src="images/pic6.jpg" alt="Birthday Photo 6">
+<img src="images/pic7.jpg" alt="Birthday Photo 7">
+<img src="images/pic8.jpg" alt="Birthday Photo 8">
+</div>
+<div class="guestbook">
+<h3>Leave a message for XYZ:</h3>
+<textarea id="guestInput" placeholder="Write your message..."></textarea>
+<button id="guestBtn">Send</button>
+<div class="guestbook-messages" id="guestMessages"></div>
+</div>
+</div>
+<div class="pin-overlay" id="pinOverlay" aria-hidden="false">
+<div class="pin-box">
+<h2>Enter PIN to proceed</h2>
+<p>Type the 4-digit secret PIN and press Unlock.</p>
+<input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN" />
+<div class="pin-actions">
+<button id="unlockBtn" class="btn btn-primary">Unlock</button>
+<button id="cancelBtn" class="btn btn-ghost">Cancel</button>
+</div>
+<div id="error" class="error" role="status" aria-live="polite"></div>
+</div>
+</div>
+</div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
